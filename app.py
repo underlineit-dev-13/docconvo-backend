@@ -18,14 +18,14 @@ WHISPER_MODEL = "small"  # Changed to "small" for better accuracy
 
 # Initialize Whisper model with optimization
 try:
-    # For CPU: use int8 for speed, float16 for accuracy
+    # For CPU: use int8 (CPU-optimized quantization)
     # For GPU: use float16 or float32
     model = WhisperModel(
         WHISPER_MODEL, 
         device="cpu", 
-        compute_type="float16"  # Better accuracy than int8
+        compute_type="int8"  # CPU-optimized (perfect for t2.medium)
     )
-    print(f"✅ Model '{WHISPER_MODEL}' loaded successfully with float16 precision")
+    print(f"✅ Model '{WHISPER_MODEL}' loaded successfully with int8 precision (CPU-optimized)")
 except Exception as e:
     model = None
     print(f"❌ Warning: Failed to initialize Whisper model: {e}")
@@ -164,12 +164,12 @@ def index():
         },
         'supported_formats': list(ALLOWED_EXTENSIONS),
         'model': WHISPER_MODEL,
-        'compute_type': 'float16 (higher accuracy)',
+        'compute_type': 'int8 (CPU-optimized)',
         'features': [
             '🎯 High accuracy transcription',
             '🌍 Automatic language detection',
             '📊 Noise reduction (VAD filter)',
-            '⚡ Optimized for speed'
+            '⚡ Optimized for CPU'
         ]
     }), 200
 
