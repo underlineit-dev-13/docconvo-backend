@@ -3,20 +3,32 @@ import tempfile
 from pathlib import Path
 from flask import Flask, request, jsonify
 from faster_whisper import WhisperModel
+import numpy as np
 
 app = Flask(__name__)
 
 # Configuration
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'flac', 'm4a', 'ogg', 'webm', 'mp4'}
 UPLOAD_FOLDER = tempfile.gettempdir()
-WHISPER_MODEL = "base"  # Options: tiny, base, small, medium, large
 
-# Initialize Whisper model
+# Model options: tiny (fastest), base, small, medium, large (most accurate)
+# For accuracy: use "small" or "medium"
+# For speed: use "base" or "tiny"
+WHISPER_MODEL = "small"  # Changed to "small" for better accuracy
+
+# Initialize Whisper model with optimization
 try:
-    model = WhisperModel(WHISPER_MODEL, device="cpu", compute_type="int8")
+    # For CPU: use int8 for speed, float16 for accuracy
+    # For GPU: use float16 or float32
+    model = WhisperModel(
+        WHISPER_MODEL, 
+        device="cpu", 
+        compute_type="float16"  # Better accuracy than int8
+    )
+    print(f"✅ Model '{WHISPER_MODEL}' loaded successfully with float16 precision")
 except Exception as e:
     model = None
-    print(f"Warning: Failed to initialize Whisper model: {e}")
+    print(f"❌ Warning: Failed to initialize Whisper model: {e}")
 
 
 def allowed_file(filename):
@@ -27,10 +39,11 @@ def allowed_file(filename):
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
     """
-    Transcribe audio file using Whisper
+    Transcribe audio file using Whisper with language detection
     
     Expected request:
     - multipart/form-data with 'audio' file field
+    - Optional: 'language' parameter (e.g., 'en', 'es', 'fr')
     
     Returns:
     - JSON response with 'transcript' field containing transcribed text
@@ -66,6 +79,9 @@ def transcribe():
                 'success': False
             }), 400
         
+        # Get optional language parameter
+        language = request.form.get('language', None)  # None = auto-detect
+        
         # Save file temporarily
         temp_path = None
         try:
@@ -75,18 +91,39 @@ def transcribe():
                 file.save(temp_file.name)
                 temp_path = temp_file.name
             
-            # Transcribe audio
-            segments, info = model.transcribe(temp_path)
+            print(f"📤 Transcribing file: {file.filename}")
+            
+            # Transcribe with better parameters for accuracy
+            segments, info = model.transcribe(
+                temp_path,
+                language=language,  # Language code or None for auto-detect
+                beam_size=5,  # Higher = better accuracy but slower (default: 5)
+                best_of=5,  # Better accuracy (default: 5)
+                temperature=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],  # Fallback temps for robustness
+                word_level_timestamps=False,  # Set True if you need timestamps
+                vad_filter=True,  # Remove silence for better accuracy
+                vad_parameters={"threshold": 0.4}  # Remove background noise
+            )
             
             # Collect all segments into single transcript
-            transcript = "".join(segment.text for segment in segments)
+            transcript = "".join(segment.text for segment in segments).strip()
+            
+            print(f"✅ Transcription complete - Language: {info.language}")
             
             return jsonify({
-                'transcript': transcript.strip(),
+                'transcript': transcript,
                 'success': True,
                 'language': info.language,
-                'duration': info.duration
+                'duration': info.duration,
+                'model': WHISPER_MODEL
             }), 200
+        
+        except Exception as e:
+            print(f"❌ Transcription error: {str(e)}")
+            return jsonify({
+                'error': f'Transcription failed: {str(e)}',
+                'success': False
+            }), 500
         
         finally:
             # Clean up temporary file
@@ -97,8 +134,9 @@ def transcribe():
                     print(f"Warning: Failed to delete temp file {temp_path}: {e}")
     
     except Exception as e:
+        print(f"❌ Unexpected error: {str(e)}")
         return jsonify({
-            'error': f'Transcription failed: {str(e)}',
+            'error': f'Unexpected error: {str(e)}',
             'success': False
         }), 500
 
@@ -118,14 +156,21 @@ def index():
     """API information endpoint"""
     return jsonify({
         'name': 'Doctor Patient Summarizer - Transcription API',
-        'version': '1.0.0',
+        'version': '2.0.0 (Accuracy Optimized)',
         'endpoints': {
             'POST /transcribe': 'Transcribe audio file (multipart/form-data with "audio" field)',
             'GET /health': 'Health check endpoint',
             'GET /': 'API information'
         },
         'supported_formats': list(ALLOWED_EXTENSIONS),
-        'model': WHISPER_MODEL
+        'model': WHISPER_MODEL,
+        'compute_type': 'float16 (higher accuracy)',
+        'features': [
+            '🎯 High accuracy transcription',
+            '🌍 Automatic language detection',
+            '📊 Noise reduction (VAD filter)',
+            '⚡ Optimized for speed'
+        ]
     }), 200
 
 
