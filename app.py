@@ -100,7 +100,6 @@ def transcribe():
                 beam_size=5,  # Higher = better accuracy but slower (default: 5)
                 best_of=5,  # Better accuracy (default: 5)
                 temperature=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],  # Fallback temps for robustness
-                word_level_timestamps=False,  # Set True if you need timestamps
                 vad_filter=True,  # Remove silence for better accuracy
                 vad_parameters={"threshold": 0.4}  # Remove background noise
             )
