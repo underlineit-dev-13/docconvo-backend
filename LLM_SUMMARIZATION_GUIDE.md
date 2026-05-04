@@ -1,7 +1,7 @@
 # Groq LLM Integration Guide
 
 ## Overview
-The Doctor Patient Summarizer backend now includes LLM-based medical summarization using **Groq API** (llama3-70b-8192 model).
+The Doctor Patient Summarizer backend now includes LLM-based medical summarization using **Groq API** (llama-3.3-70b-versatile model).
 
 ## New Endpoint: POST /summarize
 
