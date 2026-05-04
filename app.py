@@ -293,7 +293,7 @@ Return ONLY JSON in this exact format:
                         "content": user_prompt
                     }
                 ],
-                model="llama3-70b-8192",
+                model="mixtral-8x7b-32768",
                 temperature=0.3,  # Lower temperature for consistency
                 max_tokens=2048,
                 top_p=1.0
@@ -398,7 +398,7 @@ def index():
         'supported_formats': list(ALLOWED_EXTENSIONS),
         'models': {
             'transcription': WHISPER_MODEL,
-            'summarization': 'llama3-70b-8192 (via Groq)'
+            'summarization': 'mixtral-8x7b-32768 (via Groq)'
         },
         'features': [
             '⚡ Fast audio transcription',
