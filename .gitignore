@@ -26,13 +26,16 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+# Environment Variables (NEVER COMMIT)
+.env
+.env.local
+.env.*.local
+
 # Temporary files
 *.log
 *.pot
 *.mo
 .DS_Store
-.env
-.env.local
 *.tmp
 *.bak
 *.swp

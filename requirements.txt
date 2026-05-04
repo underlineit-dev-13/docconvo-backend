@@ -1,2 +1,4 @@
 flask==2.3.3
 faster-whisper==0.10.0
+groq==0.4.2
+python-dotenv==1.0.0

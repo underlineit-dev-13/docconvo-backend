@@ -5,6 +5,7 @@ A Python Flask backend API that transcribes audio files using the open-source fa
 ## 🎯 Features
 
 - **Audio Transcription**: Convert audio files to text using OpenAI's Whisper model
+- **LLM Summarization**: Medical summarization and Q&A extraction using Groq's llama3-70b-8192 model
 - **Multiple Format Support**: WAV, MP3, FLAC, M4A, OGG, WebM, MP4
 - **REST API**: Simple JSON-based REST API
 - **Error Handling**: Comprehensive error handling and validation
@@ -16,6 +17,7 @@ A Python Flask backend API that transcribes audio files using the open-source fa
 - Python 3.8+
 - pip (Python package manager)
 - ~500MB disk space for the Whisper Model
+- Groq API key (get free tier from https://console.groq.com)
 
 ## 🚀 Setup Instructions
 
@@ -49,6 +51,8 @@ pip install -r requirements.txt
 This will install:
 - **flask**: Web framework for the API
 - **faster-whisper**: Fast CPU-optimized Whisper implementation
+- **groq**: Groq API client for LLM summarization
+- **python-dotenv**: Environment variable management
 
 ## 🏃 Running Locally
 
@@ -139,7 +143,61 @@ Check if the API is running and the model is initialized.
 }
 ```
 
-### 3. GET `/`
+### 3. POST `/summarize`
+
+Summarize transcripts and extract structured Q&A using LLM.
+
+**Request:**
+- Method: `POST`
+- Content-Type: `application/json`
+- Body: JSON with `transcript` and `questions` array
+
+**Example with curl:**
+```bash
+curl -X POST http://localhost:5000/summarize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transcript": "Doctor: How are you feeling? Patient: I have chest pain and fever.",
+    "questions": ["What are the symptoms?", "How long?"]
+  }'
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "summary": "Patient presents with chest pain and fever. Symptoms appear acute.",
+  "qa": [
+    {
+      "question": "What are the symptoms?",
+      "answer": "Chest pain and fever"
+    },
+    {
+      "question": "How long?",
+      "answer": "Not specified"
+    }
+  ],
+  "success": true
+}
+```
+
+### 4. GET `/health`
+
+Check if the API is running and models are initialized.
+
+**Request:**
+- Method: `GET`
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "transcription_model": "base",
+  "groq_initialized": true,
+  "timestamp": "2026-05-04T12:34:56.789012"
+}
+```
+
+### 5. GET `/`
 
 Get API information and available endpoints.
 
@@ -149,19 +207,36 @@ Get API information and available endpoints.
 **Response:**
 ```json
 {
-  "name": "Doctor Patient Summarizer - Transcription API",
-  "version": "1.0.0",
+  "name": "Doctor Patient Summarizer - Transcription & Summarization API",
+  "version": "3.0.0 (With LLM Summarization)",
   "endpoints": {
-    "POST /transcribe": "Transcribe audio file",
+    "POST /transcribe": "Transcribe audio file to text",
+    "POST /summarize": "Summarize transcript and answer questions using LLM",
     "GET /health": "Health check endpoint",
     "GET /": "API information"
   },
   "supported_formats": ["wav", "mp3", "flac", "m4a", "ogg", "webm", "mp4"],
-  "model": "base"
+  "models": {
+    "transcription": "base",
+    "summarization": "llama3-70b-8192 (via Groq)"
+  },
+  "features": ["⚡ Fast audio transcription", "🧠 LLM-based medical summarization", "📋 Structured Q&A extraction"]
 }
 ```
 
 ## 🔧 Configuration
+
+### Environment Variables
+
+Create a `.env` file in the project root:
+
+```bash
+GROQ_API_KEY=gsk_your_api_key_here
+```
+
+Get your key from: https://console.groq.com
+
+### Whisper Model Configuration
 
 Edit the following variables in `app.py` to customize behavior:
 
@@ -207,13 +282,18 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. **Run with Gunicorn (Production):**
+4. **Configure Groq API key:**
+```bash
+echo 'GROQ_API_KEY=your_api_key_here' > .env
+```
+
+5. **Run with Gunicorn (Production):**
 ```bash
 pip install gunicorn
 gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 120 app:app
 ```
 
-5. **Optional: Run as a service**
+6. **Optional: Run as a service**
 
 Create `/etc/systemd/system/transcription-api.service`:
 ```ini
@@ -335,6 +415,17 @@ For issues or questions:
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: April 2026  
+**Version**: 3.0.0  
+**Last Updated**: May 2026  
 **Maintainer**: Doctor Patient Summarizer Team
+
+---
+
+## 🧠 LLM Summarization Details
+
+See [LLM_SUMMARIZATION_GUIDE.md](LLM_SUMMARIZATION_GUIDE.md) for detailed documentation on the `/summarize` endpoint, including:
+- Setup instructions
+- API usage examples
+- Error handling
+- Performance notes
+- Troubleshooting
